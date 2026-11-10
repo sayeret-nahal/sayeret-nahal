@@ -1,6 +1,7 @@
 "use client";
 
 import { buttonClass, cx } from "@/components/ui";
+import { Turnstile } from "@/components/ui/turnstile";
 import { useKeepValuesAction } from "@/components/cases/form";
 import type { PublicFormState } from "../_lib/settings";
 import { EmergencyBox, Honeypot, PrivacyNote } from "../_lib/ui";
@@ -58,6 +59,7 @@ export function ConcernForm({ privacyText, emergencyText }: { privacyText?: stri
         </PublicField>
       </fieldset>
 
+      <Turnstile />
       <PrivacyNote text={privacyText} />
 
       <FormError error={state.error} />

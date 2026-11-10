@@ -3,11 +3,22 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { ActionState } from "@/components/ui/client";
+import { ipAllowed, keyAllowed } from "@/lib/rate-limit";
+
+const SLOW_DOWN = { error: "יותר מדי ניסיונות. נסו שוב בעוד כמה דקות." };
+
+/** Throttles brute force per device and per account (Supabase sees only the server's IP). */
+async function throttled(kind: string, email: string, perIp: number, perEmail: number): Promise<boolean> {
+  const okIp = await ipAllowed(`auth:${kind}`, perIp, 15 * 60_000);
+  const okEmail = !email || keyAllowed(`auth:${kind}:email:${email}`, perEmail, 15 * 60_000);
+  return !(okIp && okEmail);
+}
 
 export async function signIn(_: ActionState, formData: FormData): Promise<ActionState> {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
   if (!email || !password) return { error: "נא למלא דוא\"ל וסיסמה" };
+  if (await throttled("signin", email, 20, 8)) return SLOW_DOWN;
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) return { error: "הדוא\"ל או הסיסמה שגויים" };
@@ -30,6 +41,7 @@ export async function signUp(_: ActionState, formData: FormData): Promise<Action
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
   if (password.length < 12) return { error: "הסיסמה צריכה להיות באורך 12 תווים לפחות" };
+  if (await throttled("signup", email, 5, 3)) return SLOW_DOWN;
   const supabase = await createClient();
   const { error } = await supabase.auth.signUp({
     email,
@@ -46,6 +58,7 @@ export async function signUp(_: ActionState, formData: FormData): Promise<Action
 export async function requestPasswordReset(_: ActionState, formData: FormData): Promise<ActionState> {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   if (!email) return { error: "נא להקליד את כתובת הדוא״ל" };
+  if (await throttled("reset", email, 5, 3)) return SLOW_DOWN;
   const supabase = await createClient();
   await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/auth/confirm` });
   // same answer whether or not the address exists (no account enumeration)

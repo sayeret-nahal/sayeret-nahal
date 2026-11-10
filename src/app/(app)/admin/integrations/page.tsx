@@ -4,6 +4,7 @@ import { Badge, Card, CardHeader, EmptyState, Notice, PageHeader, type Tone } fr
 import { ActionForm, CopyButton, SubmitButton } from "@/components/ui/client";
 import { ImportReportForm, TestSendForm } from "@/components/admin/integration-forms";
 import { requireAdmin } from "@/components/admin/guard";
+import { isDemoAccount } from "@/lib/demo";
 import { getAppUrl } from "@/components/admin/app-url";
 import { createClient } from "@/lib/supabase/server";
 import { addDays, formatDateTime, todayIL } from "@/lib/dates";
@@ -24,7 +25,8 @@ const STATUS: Record<string, { label: string; tone: Tone }> = {
 };
 
 export default async function IntegrationsPage() {
-  await requireAdmin();
+  const { email } = await requireAdmin();
+  const demo = isDemoAccount(email);
   const supabase = await createClient();
   const app = await getAppUrl();
   const secret = ingestSecret();
@@ -44,6 +46,7 @@ export default async function IntegrationsPage() {
     per.set(e.provider, p);
   }
   const hook = (p: string) => {
+    if (demo) return null; // the shared demo login must never see secrets
     const k = hookKeyFor(p);
     return k ? `${app.url}/api/hooks/${p}?key=${k}` : null;
   };
@@ -69,6 +72,8 @@ export default async function IntegrationsPage() {
 
       {!secret ? (
         <Notice tone="warn" title="החיבורים עוד לא הופעלו בשרת">צריך להגדיר בשרת את INGEST_SECRET ו-HOOK_KEY. הפרטים במסמך docs/09-integrations.md.</Notice>
+      ) : demo ? (
+        <Notice tone="info" title="סביבת הדגמה">כתובות החיבור והמפתחות מוסתרים בחשבונות ההדגמה.</Notice>
       ) : !linked ? (
         <Notice tone="warn" title="צריך לסנכרן את מפתח החיבור">
           <span className="block mb-2">המפתח בשרת עוד לא נשמר במסד הנתונים, ולכן קריאות מבחוץ נדחות.</span>

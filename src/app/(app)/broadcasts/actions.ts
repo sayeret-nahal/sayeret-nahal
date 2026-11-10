@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import type { ActionState } from "@/components/ui/client";
 import { requireStaff } from "@/lib/auth";
-import { getAppUrl } from "@/components/admin/app-url";
+import { DEMO_BLOCKED, isDemoAccount } from "@/lib/demo";
 import { perms } from "@/lib/permissions";
 import { createClient } from "@/lib/supabase/server";
 
@@ -58,8 +58,9 @@ export async function saveDraft(_: ActionState, fd: FormData): Promise<ActionSta
 
 /** Management approval: freezes the recipient list and starts sending. */
 export async function approveAndSend(_: ActionState, fd: FormData): Promise<ActionState> {
-  const { staff } = await requireStaff();
+  const { staff, email } = await requireStaff();
   if (!perms.sendBroadcast(staff.role)) return { error: "רק הנהלה יכולה לאשר שליחה" };
+  if (isDemoAccount(email)) return DEMO_BLOCKED;
   if (fd.get("confirm") !== "on") return { error: "נא לאשר שהתוכן נבדק ושהנמענים הסכימו" };
   const id = String(fd.get("id") ?? "");
   const supabase = await createClient();
@@ -73,8 +74,8 @@ export async function approveAndSend(_: ActionState, fd: FormData): Promise<Acti
 }
 
 export async function cancelBroadcast(fd: FormData): Promise<void> {
-  const { staff } = await requireStaff();
-  if (!perms.sendBroadcast(staff.role)) return;
+  const { staff, email } = await requireStaff();
+  if (!perms.sendBroadcast(staff.role) || isDemoAccount(email)) return;
   const id = String(fd.get("id") ?? "");
   const supabase = await createClient();
   await supabase.rpc("cancel_broadcast", { p_id: id });
@@ -82,8 +83,8 @@ export async function cancelBroadcast(fd: FormData): Promise<void> {
 }
 
 export async function resumeSending(fd: FormData): Promise<void> {
-  const { staff } = await requireStaff();
-  if (!perms.sendBroadcast(staff.role)) return;
+  const { staff, email } = await requireStaff();
+  if (!perms.sendBroadcast(staff.role) || isDemoAccount(email)) return;
   await kickSender();
   revalidatePath(`/broadcasts/${String(fd.get("id") ?? "")}`);
 }
@@ -91,9 +92,11 @@ export async function resumeSending(fd: FormData): Promise<void> {
 /** Starts the sender right away instead of waiting for the scheduled run. */
 async function kickSender() {
   const cron = process.env.CRON_SECRET;
-  if (!cron) return;
-  const { url } = await getAppUrl();
-  fetch(`${url}/api/cron/broadcasts`, { headers: { authorization: `Bearer ${cron}` }, signal: AbortSignal.timeout(2500) }).catch(() => undefined);
+  // only a server-configured address: the secret must never follow a request's Host header
+  const base = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "")
+    || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "");
+  if (!cron || !/^https?:\/\//.test(base)) return;
+  fetch(`${base}/api/cron/broadcasts`, { headers: { authorization: `Bearer ${cron}` }, signal: AbortSignal.timeout(2500) }).catch(() => undefined);
 }
 
 const templateSchema = z.object({
@@ -106,8 +109,9 @@ const templateSchema = z.object({
 });
 
 export async function saveTemplate(_: ActionState, fd: FormData): Promise<ActionState> {
-  const { staff } = await requireStaff();
+  const { staff, email } = await requireStaff();
   if (!perms.sendBroadcast(staff.role)) return { error: "רק הנהלה מנהלת תבניות" };
+  if (isDemoAccount(email)) return DEMO_BLOCKED;
   const vars = Array.from({ length: 5 }, (_, i) => String(fd.get(`var_${i + 1}`) ?? "")).filter(Boolean);
   const parsed = templateSchema.safeParse({
     name: String(fd.get("name") ?? ""),

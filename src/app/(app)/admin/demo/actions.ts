@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import type { ActionState } from "@/components/ui/client";
-import { NOT_ADMIN, adminSession } from "@/components/admin/guard";
+import { NOT_ADMIN, realAdminSession as adminSession } from "@/components/admin/guard";
 
 // Foreign-key-safe order: donations reference contacts (on delete restrict), so they go first.
 // Deleting contacts cascades to care state, interactions, tags, tasks, family links and update links.

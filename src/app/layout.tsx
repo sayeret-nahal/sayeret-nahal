@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import { Assistant, Poppins } from "next/font/google";
 import "./globals.css";
 
@@ -13,7 +14,9 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#425525" };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  // reading the request makes every page render per request, so each one gets its own CSP nonce
+  await headers();
   return (
     <html lang="he" dir="rtl" className={`${assistant.variable} ${poppins.variable}`}>
       <body className="font-sans antialiased min-h-dvh">{children}</body>

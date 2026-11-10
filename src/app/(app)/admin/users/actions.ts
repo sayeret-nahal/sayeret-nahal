@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import type { ActionState } from "@/components/ui/client";
-import { NOT_ADMIN, adminSession, intList } from "@/components/admin/guard";
+import { NOT_ADMIN, realAdminSession as adminSession, intList } from "@/components/admin/guard";
 import type { AppRole } from "@/lib/types";
 
 const ROLES = ["admin", "manager", "coordinator", "cohort_lead", "donor_coordinator", "volunteer"] as const;

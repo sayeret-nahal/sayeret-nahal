@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { adminSession, NOT_ADMIN } from "@/components/admin/guard";
+import { realAdminSession as adminSession, NOT_ADMIN } from "@/components/admin/guard";
 import type { ActionState } from "@/components/ui/client";
 import { createClient } from "@/lib/supabase/server";
 

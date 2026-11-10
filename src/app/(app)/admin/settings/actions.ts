@@ -5,7 +5,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { todayIL } from "@/lib/dates";
 import type { ActionState } from "@/components/ui/client";
-import { NOT_ADMIN, adminSession } from "@/components/admin/guard";
+import { NOT_ADMIN, realAdminSession as adminSession } from "@/components/admin/guard";
 
 const int = (min: number, max: number, label: string) =>
   z.coerce.number({ message: `${label}: נא לכתוב מספר` }).int(`${label}: מספר שלם בלבד`)

@@ -1,5 +1,6 @@
 import ExcelJS from "exceljs";
 import { NextResponse } from "next/server";
+import { isDemoAccount } from "@/lib/demo";
 import { getAuthState } from "@/lib/auth";
 import { getLookups, logAccess } from "@/lib/data";
 import { todayIL } from "@/lib/dates";
@@ -69,6 +70,7 @@ export async function GET() {
   if ((s.requireMfa || s.nextAal === "aal2") && s.aal !== "aal2") return NextResponse.json({ error: "נדרש אימות דו־שלבי" }, { status: 403 });
   const role = s.staff.role;
   if (!perms.exportData(role)) return NextResponse.json({ error: "אין לך הרשאה לייצא נתונים" }, { status: 403 });
+  if (isDemoAccount(s.user.email)) return NextResponse.json({ error: "בסביבת ההדגמה הייצוא חסום" }, { status: 403 });
 
   const supabase = await createClient();
   const lookups = await getLookups();

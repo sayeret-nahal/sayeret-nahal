@@ -2,6 +2,7 @@
 
 import { after } from "next/server";
 import { ipAllowed } from "@/lib/rate-limit";
+import { BOT_CHECK_FAILED, humanVerified } from "@/lib/turnstile";
 import { createClient } from "@/lib/supabase/server";
 import { normalizePhone } from "@/lib/phone";
 import { notifyNewPublicCase } from "@/lib/notify";
@@ -28,6 +29,7 @@ export async function submitConcern(_: PublicFormState, fd: FormData): Promise<P
   if (Object.keys(fieldErrors).length) return { error: "חסר משהו קטן — מסומן למעלה.", fieldErrors };
 
   const supabase = await createClient();
+  if (!(await humanVerified(fd.get("cf-turnstile-response")))) return { error: BOT_CHECK_FAILED };
   if (!(await ipAllowed("concern"))) {
     return { error: "נשלחו כבר כמה פניות מהמכשיר הזה. נסו שוב בעוד כמה דקות. אם יש סכנה מיידית — חייגו 101, ולתמיכה נפשית מיידית ער״ן 1201." };
   }

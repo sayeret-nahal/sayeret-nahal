@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireStaff, type Session } from "@/lib/auth";
 import { perms } from "@/lib/permissions";
+import { isDemoAccount } from "@/lib/demo";
 
 /** For admin pages: active staff with the admin role, otherwise back to the home page. */
 export async function requireAdmin(): Promise<Session> {
@@ -13,6 +14,12 @@ export async function requireAdmin(): Promise<Session> {
 export async function adminSession(): Promise<Session | null> {
   const session = await requireStaff();
   return perms.admin(session.staff.role) ? session : null;
+}
+
+/** For sensitive admin actions (staff, settings, secrets): admins only, and never a shared demo account. */
+export async function realAdminSession(): Promise<Session | null> {
+  const session = await adminSession();
+  return session && !isDemoAccount(session.email) ? session : null;
 }
 
 export const NOT_ADMIN = { error: "רק מנהל/ת מערכת יכול/ה לבצע את הפעולה הזאת." } as const;

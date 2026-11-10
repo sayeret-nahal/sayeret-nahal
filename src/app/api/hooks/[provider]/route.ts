@@ -5,6 +5,7 @@
 import { NextResponse } from "next/server";
 import { fromGrow, fromJGive, fromNexus, readBody } from "@/lib/integrations/normalize";
 import { hookKeyFor, ingestClient, ingestSecret, safeEqual } from "@/lib/integrations/ingest";
+import { ipAllowed } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ provide
   const secret = ingestSecret();
   const key = hookKeyFor(provider);
   if (!secret || !key) return NextResponse.json({ error: "integration not configured" }, { status: 503 });
+  if (!(await ipAllowed(`hooks:${provider}`, 120, 60_000))) return NextResponse.json({ error: "too many requests" }, { status: 429 });
   if (!safeEqual(new URL(req.url).searchParams.get("key"), key)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const body = await readBody(req);

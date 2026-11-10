@@ -2,6 +2,7 @@
 
 import { MessageCircle, MessageSquare, Phone } from "lucide-react";
 import { buttonClass, cx } from "@/components/ui";
+import { Turnstile } from "@/components/ui/turnstile";
 import { useKeepValuesAction } from "@/components/cases/form";
 import type { PublicFormState } from "../_lib/settings";
 import { EmergencyBox, Honeypot, PrivacyNote } from "../_lib/ui";
@@ -69,6 +70,7 @@ export function TalkForm({ responseText, privacyText, emergencyText }: { respons
         <textarea id="talk-message" name="message" rows={4} maxLength={2000} className={cx(publicControl, "py-3 min-h-28")} {...describe("talk-message", fe.message, true)} />
       </PublicField>
 
+      <Turnstile />
       <PrivacyNote text={privacyText} />
 
       <FormError error={state.error} />

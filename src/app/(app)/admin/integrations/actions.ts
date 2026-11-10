@@ -2,7 +2,7 @@
 
 import ExcelJS from "exceljs";
 import { revalidatePath } from "next/cache";
-import { adminSession, NOT_ADMIN } from "@/components/admin/guard";
+import { realAdminSession as adminSession, NOT_ADMIN } from "@/components/admin/guard";
 import type { ActionState } from "@/components/ui/client";
 import { createClient } from "@/lib/supabase/server";
 import { decodeText, extractTable, IMPORT_MAX_BYTES, IMPORT_MAX_ROWS, parseCsv, sheetToGrid } from "@/lib/import";

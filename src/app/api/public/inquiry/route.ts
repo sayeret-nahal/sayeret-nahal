@@ -5,6 +5,7 @@
 // Browsers may call it only from the origins in WEBSITE_ORIGINS (comma separated).
 import { NextResponse } from "next/server";
 import { ipAllowed } from "@/lib/rate-limit";
+import { BOT_CHECK_FAILED, humanVerified } from "@/lib/turnstile";
 import { notifyNewPublicCase } from "@/lib/notify";
 import { ingestClient } from "@/lib/integrations/ingest";
 import { after } from "next/server";
@@ -43,6 +44,8 @@ export async function POST(req: Request) {
   } catch {
     return cors(req, NextResponse.json({ ok: false, error: "invalid JSON" }, { status: 400 }));
   }
+  // when Turnstile is on, the site's own form must include a widget and send its token
+  if (!(await humanVerified(b.turnstile_token))) return cors(req, NextResponse.json({ ok: false, error: BOT_CHECK_FAILED }, { status: 403 }));
   if (!(await ipAllowed("inquiry-api"))) return cors(req, NextResponse.json({ ok: false, error: "נשלחו כבר כמה פניות. נסו שוב בעוד כמה דקות." }, { status: 429 }));
   const t = (k: string, max: number) => (typeof b[k] === "string" ? (b[k] as string).trim().slice(0, max) : "");
   const { data, error } = await ingestClient().rpc("submit_inquiry", {

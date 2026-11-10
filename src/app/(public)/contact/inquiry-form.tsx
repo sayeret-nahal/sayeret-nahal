@@ -1,6 +1,7 @@
 "use client";
 
 import { buttonClass, cx } from "@/components/ui";
+import { Turnstile } from "@/components/ui/turnstile";
 import { useKeepValuesAction } from "@/components/cases/form";
 import type { PublicFormState } from "../_lib/settings";
 import { Honeypot, PrivacyNote } from "../_lib/ui";
@@ -63,6 +64,7 @@ export function InquiryForm({ topics, defaultTopic, privacyText, orgName, page }
         </span>
       </label>
 
+      <Turnstile />
       <PrivacyNote text={privacyText} />
       <FormError error={state.error} />
 

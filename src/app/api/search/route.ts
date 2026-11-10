@@ -5,7 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 // Global search. Results are filtered by RLS to what this user may see.
 export async function GET(req: NextRequest) {
   const s = await getAuthState();
-  if (!s.staff) return NextResponse.json({ results: [] }, { status: 401 });
+  if (!s.staff || !s.staff.is_active) return NextResponse.json({ results: [] }, { status: 401 });
+  if ((s.requireMfa || s.nextAal === "aal2") && s.aal !== "aal2") return NextResponse.json({ results: [] }, { status: 401 });
   const q = (req.nextUrl.searchParams.get("q") ?? "").slice(0, 80);
   if (q.trim().length < 2) return NextResponse.json({ results: [] });
   const supabase = await createClient();

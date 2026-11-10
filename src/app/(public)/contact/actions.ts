@@ -2,6 +2,7 @@
 
 import { after } from "next/server";
 import { ipAllowed } from "@/lib/rate-limit";
+import { BOT_CHECK_FAILED, humanVerified } from "@/lib/turnstile";
 import { createClient } from "@/lib/supabase/server";
 import { normalizePhone } from "@/lib/phone";
 import { notifyNewPublicCase } from "@/lib/notify";
@@ -27,6 +28,7 @@ export async function submitInquiry(_: PublicFormState, fd: FormData): Promise<P
   else if (message.length > 2000) fieldErrors.message = "עד 2,000 תווים";
   if (Object.keys(fieldErrors).length) return { error: "חסר משהו קטן — מסומן למעלה.", fieldErrors };
 
+  if (!(await humanVerified(fd.get("cf-turnstile-response")))) return { error: BOT_CHECK_FAILED };
   if (!(await ipAllowed("inquiry"))) return { error: "נשלחו כבר כמה פניות מהמכשיר הזה. נסו שוב בעוד כמה דקות." };
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("submit_inquiry", {
