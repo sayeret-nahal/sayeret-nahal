@@ -1,0 +1,93 @@
+@import "tailwindcss";
+
+/* Design tokens — Sayeret Nahal Association brand book: dark olive, olive, sage, sand, yellow, near-black.
+   Text colors keep WCAG AA contrast on every background they are used on. */
+@theme {
+  --font-sans: var(--font-assistant), var(--font-poppins), system-ui, sans-serif;
+  --font-latin: var(--font-poppins), system-ui, sans-serif;
+
+  /* brand palette (as published) */
+  --color-olive-dark: #425525;
+  --color-olive-deep: #344512;
+  --color-olive: #769131;
+  --color-sage: #d3deb8;
+  --color-sand: #ede4cc;
+  --color-sun: #f8ce46;
+  --color-night: #1f211e;
+
+  /* surfaces and text (warm neutrals derived from the palette) */
+  --color-canvas: #f7f4ec;
+  --color-surface: #ffffff;
+  --color-ink: #1f211e;
+  --color-ink-2: #474b40;
+  --color-ink-3: #5b5f53; /* ≥4.7:1 on every soft background */
+  --color-line: #e6e1d3;
+  --color-line-strong: #d3cdbb;
+  --color-control: #83877a; /* form-control borders: ≥3:1 (WCAG 1.4.11) */
+
+  --color-brand: #425525;
+  --color-brand-strong: #344512;
+  --color-brand-soft: #eaefdc;
+
+  --color-accent: #f8ce46;
+  --color-accent-soft: #fdf3d2;
+
+  --color-danger: #b42318;
+  --color-danger-soft: #fdecea;
+  --color-warn: #8f5a00;
+  --color-warn-soft: #fdf3d2;
+  --color-info: #1d5fa8;
+  --color-info-soft: #eaf2fb;
+  --color-ok: #425525;
+  --color-ok-soft: #eaefdc;
+  --color-muted-soft: #efebe0;
+  --color-pink: #9b1d5a;
+  --color-pink-soft: #fce4ef;
+
+  --radius-card: 0.875rem;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  /* keep focused elements clear of the sticky header and mobile bottom bar (WCAG 2.4.11) */
+  scroll-padding-top: 4.5rem;
+  scroll-padding-bottom: 5rem;
+}
+
+body {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-feature-settings: "kern";
+}
+
+/* Visible keyboard focus everywhere */
+:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Native <dialog> */
+dialog::backdrop {
+  background: rgb(31 33 30 / 0.45);
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #fff;
+  }
+  .print-plain {
+    box-shadow: none !important;
+    border: 0 !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
