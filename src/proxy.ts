@@ -14,14 +14,13 @@ const EMBED_ORIGINS = (process.env.WEBSITE_ORIGINS ?? "").split(",").map((s) => 
 function contentSecurityPolicy(nonce: string, path: string, https: boolean): string {
   const dev = process.env.NODE_ENV === "development";
   const embed = path.startsWith("/embed/") && EMBED_ORIGINS.length > 0;
-  const join = path === "/join" || path.startsWith("/join/"); // the landing page uses Google Fonts
   return [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${dev ? " 'unsafe-eval'" : ""}`,
     // React's style={{…}} attributes need inline styles; style injection is far less dangerous than script
-    `style-src 'self' 'unsafe-inline'${join ? " https://fonts.googleapis.com" : ""}`,
+    "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",
-    `font-src 'self'${join ? " https://fonts.gstatic.com" : ""}`,
+    "font-src 'self'",
     `connect-src 'self' ${process.env.NEXT_PUBLIC_SUPABASE_URL ?? ""} https://challenges.cloudflare.com`,
     "frame-src https://challenges.cloudflare.com",
     embed ? `frame-ancestors ${EMBED_ORIGINS.join(" ")}` : "frame-ancestors 'none'",
@@ -40,6 +39,9 @@ export async function proxy(request: NextRequest) {
   return out;
 }
 
+// No session needed here: skip the auth check entirely (faster, and nothing to refresh)
+const SESSIONLESS = ["/join", "/api/join", "/api/public", "/api/hooks", "/api/cron"];
+
 async function handle(request: NextRequest, nonce: string, csp: string) {
   // Next reads the nonce from the request's CSP header and adds it to its own <script> tags
   const next = () => {
@@ -48,6 +50,8 @@ async function handle(request: NextRequest, nonce: string, csp: string) {
     h.set("Content-Security-Policy", csp);
     return NextResponse.next({ request: { headers: h } });
   };
+  const p = request.nextUrl.pathname;
+  if (SESSIONLESS.some((x) => p === x || p.startsWith(x + "/"))) return next();
   let response = next();
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

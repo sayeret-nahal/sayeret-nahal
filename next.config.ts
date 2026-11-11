@@ -28,6 +28,8 @@ const nextConfig: NextConfig = {
     return [
       { source: "/((?!embed/).*)", headers: securityHeaders() },
       { source: "/embed/:path*", headers: securityHeaders(true) },
+      // landing-page images and fonts: cache in the browser and at the edge
+      { source: "/join/:file(.*\\.(?:webp|woff2))", headers: [{ key: "Cache-Control", value: "public, max-age=604800, stale-while-revalidate=86400" }] },
     ];
   },
 };
