@@ -5,7 +5,7 @@ const ACTIVITY_COOKIE = "crm_last_activity";
 const IDLE_MS = Number(process.env.IDLE_MINUTES ?? 30) * 60_000;
 
 // Paths that work without a staff session.
-const PUBLIC_PATHS = ["/login", "/talk", "/concern", "/update", "/auth", "/contact", "/embed", "/api/hooks", "/api/cron", "/api/public", "/api/join"];
+const PUBLIC_PATHS = ["/login", "/talk", "/concern", "/update", "/auth", "/contact", "/embed", "/api/hooks", "/api/cron", "/api/public", "/api/join", "/join"];
 
 // Sites allowed to embed /embed/* forms (the association's website)
 const EMBED_ORIGINS = (process.env.WEBSITE_ORIGINS ?? "").split(",").map((s) => s.trim().replace(/\/$/, "")).filter(Boolean);
@@ -14,13 +14,14 @@ const EMBED_ORIGINS = (process.env.WEBSITE_ORIGINS ?? "").split(",").map((s) => 
 function contentSecurityPolicy(nonce: string, path: string, https: boolean): string {
   const dev = process.env.NODE_ENV === "development";
   const embed = path.startsWith("/embed/") && EMBED_ORIGINS.length > 0;
+  const join = path === "/join" || path.startsWith("/join/"); // the landing page uses Google Fonts
   return [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${dev ? " 'unsafe-eval'" : ""}`,
     // React's style={{…}} attributes need inline styles; style injection is far less dangerous than script
-    "style-src 'self' 'unsafe-inline'",
+    `style-src 'self' 'unsafe-inline'${join ? " https://fonts.googleapis.com" : ""}`,
     "img-src 'self' data: blob:",
-    "font-src 'self'",
+    `font-src 'self'${join ? " https://fonts.gstatic.com" : ""}`,
     `connect-src 'self' ${process.env.NEXT_PUBLIC_SUPABASE_URL ?? ""} https://challenges.cloudflare.com`,
     "frame-src https://challenges.cloudflare.com",
     embed ? `frame-ancestors ${EMBED_ORIGINS.join(" ")}` : "frame-ancestors 'none'",

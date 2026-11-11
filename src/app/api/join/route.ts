@@ -37,7 +37,8 @@ function jpegHex(v: unknown): string | null {
 
 export async function POST(req: Request) {
   const o = req.headers.get("origin");
-  if (o && !origins().includes(o)) return NextResponse.json({ ok: false, error: "origin not allowed" }, { status: 403 });
+  const self = new URL(req.url).origin === o || process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "") === o;
+  if (o && !self && !origins().includes(o)) return NextResponse.json({ ok: false, error: "origin not allowed" }, { status: 403 });
   if (!(await ipAllowed("join", 5, 10 * 60_000))) {
     return cors(req, NextResponse.json({ ok: false, error: "נשלחו כבר כמה טפסים מהמכשיר הזה. נסו שוב בעוד כמה דקות." }, { status: 429 }));
   }
