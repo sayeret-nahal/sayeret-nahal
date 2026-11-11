@@ -5,7 +5,7 @@ const ACTIVITY_COOKIE = "crm_last_activity";
 const IDLE_MS = Number(process.env.IDLE_MINUTES ?? 30) * 60_000;
 
 // Paths that work without a staff session.
-const PUBLIC_PATHS = ["/login", "/talk", "/concern", "/update", "/auth", "/contact", "/embed", "/api/hooks", "/api/cron", "/api/public"];
+const PUBLIC_PATHS = ["/login", "/talk", "/concern", "/update", "/auth", "/contact", "/embed", "/api/hooks", "/api/cron", "/api/public", "/api/join"];
 
 // Sites allowed to embed /embed/* forms (the association's website)
 const EMBED_ORIGINS = (process.env.WEBSITE_ORIGINS ?? "").split(",").map((s) => s.trim().replace(/\/$/, "")).filter(Boolean);

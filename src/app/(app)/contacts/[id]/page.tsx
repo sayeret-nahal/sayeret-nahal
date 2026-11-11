@@ -18,6 +18,7 @@ import { formatDate, formatDateTime, memorialDates, relativeDay, daysFromToday }
 import { CASE_KIND_LABELS, CASE_STATUS_LABELS, KIND_LABELS, OUTCOME_LABELS, SOURCE_LABELS } from "@/lib/labels";
 import type { Case, Contact, ContactCare, ContactHealth, Donation, Fallen, Interaction, Task } from "@/lib/types";
 import { activePayerCutoff, pinkState } from "@/lib/pink";
+import { JoinAnswers } from "@/components/contacts/join-answers";
 import { markPhone, markVerified, setTaskStatus, archiveContact } from "../actions";
 
 export const metadata: Metadata = { title: "כרטיס אדם" };
@@ -54,6 +55,9 @@ export default async function ContactPage({ params }: { params: Promise<{ id: st
   const activeMember = isMember && !!c.last_paid_at && c.last_paid_at >= payerCutoff;
   const { data: benefitRows } = await supabase.from("benefit_usages").select("id, provider, used_at, description, amount")
     .eq("contact_id", id).order("used_at", { ascending: false }).limit(20);
+  const { data: joinRow } = perms.seeCare(role)
+    ? await supabase.from("join_submissions").select("answers, ref, received_at").eq("contact_id", id).order("received_at", { ascending: false }).limit(1).maybeSingle()
+    : { data: null };
   const benefits = (benefitRows ?? []) as { id: string; provider: string; used_at: string; description: string | null; amount: number | null }[];
   const careRow = care.data;
   const status = lookups.status(careRow?.status_code);
@@ -267,6 +271,8 @@ export default async function ContactPage({ params }: { params: Promise<{ id: st
               </Card>
             );
           })}
+
+          {joinRow && <JoinAnswers received={joinRow.received_at} answers={joinRow.answers as Record<string, unknown>} source={joinRow.ref} />}
 
           {(isMember || benefits.length > 0) && (
             <Card>
