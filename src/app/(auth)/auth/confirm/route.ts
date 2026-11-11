@@ -13,5 +13,8 @@ export async function GET(request: NextRequest) {
   if (token_hash && type) ok = !(await supabase.auth.verifyOtp({ type, token_hash })).error;
   else if (code) ok = !(await supabase.auth.exchangeCodeForSession(code)).error;
   const dest = !ok ? "/login?error=confirm" : type === "recovery" ? "/auth/reset" : "/auth/mfa";
-  return NextResponse.redirect(new URL(dest, request.url));
+  const res = NextResponse.redirect(new URL(dest, request.url));
+  // a fresh sign-in through an e-mail link starts a fresh idle window (see src/proxy.ts)
+  if (ok) res.cookies.set("crm_last_activity", String(Date.now()), { httpOnly: true, sameSite: "lax", secure: url.protocol === "https:", path: "/" });
+  return res;
 }

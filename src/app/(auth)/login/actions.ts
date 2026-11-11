@@ -1,9 +1,18 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { ActionState } from "@/components/ui/client";
 import { ipAllowed, keyAllowed } from "@/lib/rate-limit";
+
+/** A fresh sign-in starts a fresh activity window (otherwise a stale timestamp from an old session
+ *  makes the server-side idle check in src/proxy.ts sign the person out on their first click). */
+async function markActive() {
+  (await cookies()).set("crm_last_activity", String(Date.now()), {
+    httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/",
+  });
+}
 
 const SLOW_DOWN = { error: "יותר מדי ניסיונות. נסו שוב בעוד כמה דקות." };
 
@@ -23,6 +32,7 @@ export async function signIn(_: ActionState, formData: FormData): Promise<Action
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) return { error: "הדוא\"ל או הסיסמה שגויים" };
   await supabase.rpc("log_access", { p_action: "login", p_table: null, p_record: null, p_details: null });
+  await markActive();
   redirect(safeNext(String(formData.get("next") ?? "/")));
 }
 
@@ -102,6 +112,7 @@ export async function demoSignIn(formData: FormData) {
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) redirect("/login?error=demo");
+  await markActive();
   await supabase.rpc("log_access", { p_action: "login", p_table: null, p_record: null, p_details: { demo: true } });
   redirect("/");
 }
